@@ -107,7 +107,6 @@ UVCPreview::~UVCPreview() {
  * and you may need to confirm the size
  */
 uvc_frame_t *UVCPreview::get_frame(size_t data_bytes) {
-	LOGD(">>>> Haha");
 	uvc_frame_t *frame = NULL;
 	pthread_mutex_lock(&pool_mutex);
 	{
