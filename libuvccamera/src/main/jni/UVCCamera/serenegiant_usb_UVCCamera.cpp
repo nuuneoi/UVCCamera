@@ -1994,6 +1994,17 @@ static jint nativeGetPrivacy(JNIEnv *env, jobject thiz,
 	RETURN(result, jint);
 }
 
+static jint nativeGetCurrentFps(JNIEnv *env, jobject thiz,
+	ID_TYPE id_camera) {
+
+	ENTER();
+	int result = 0;
+	UVCCamera *camera = reinterpret_cast<UVCCamera *>(id_camera);
+	if (LIKELY(camera)) {
+		result = camera->getCurrentFps();
+	}
+	RETURN(result, jint);
+}
 //**********************************************************************
 //
 //**********************************************************************
@@ -2189,6 +2200,8 @@ static JNINativeMethod methods[] = {
 	{ "nativeUpdatePrivacyLimit",		"(J)I", (void *) nativeUpdatePrivacyLimit },
 	{ "nativeSetPrivacy",				"(JZ)I", (void *) nativeSetPrivacy },
 	{ "nativeGetPrivacy",				"(J)I", (void *) nativeGetPrivacy },
+
+	{ "nativeGetCurrentFps",			"(J)I", (void *) nativeGetCurrentFps },
 };
 
 int register_uvccamera(JNIEnv *env) {

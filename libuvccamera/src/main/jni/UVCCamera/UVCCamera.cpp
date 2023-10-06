@@ -2283,3 +2283,12 @@ int UVCCamera::getAnalogVideoLockState() {
 	}
 	RETURN(0, int);
 }
+
+int UVCCamera::getCurrentFps() {
+	ENTER();
+	int result = 0;
+	if (mPreview) {
+		result = mPreview->getCurrentFps();
+	}
+	RETURN(result, int);
+}

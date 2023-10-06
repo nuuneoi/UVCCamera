@@ -29,6 +29,7 @@
 #include <pthread.h>
 #include <android/native_window.h>
 #include "objectarray.h"
+#include "FpsCounter.h"
 
 #pragma interface
 
@@ -109,6 +110,8 @@ private:
 	void do_capture_idle_loop(JNIEnv *env);
 	void do_capture_callback(JNIEnv *env, uvc_frame_t *frame);
 	void callbackPixelFormatChanged();
+//
+    FpsCounter* fpsCounter;
 public:
 	UVCPreview(uvc_device_handle_t *devh);
 	~UVCPreview();
@@ -121,6 +124,7 @@ public:
 	int stopPreview();
 	inline const bool isCapturing() const;
 	int setCaptureDisplay(ANativeWindow *capture_window);
+	int getCurrentFps();
 };
 
 #endif /* UVCPREVIEW_H_ */

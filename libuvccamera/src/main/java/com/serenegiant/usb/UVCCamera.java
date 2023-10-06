@@ -901,7 +901,14 @@ public class UVCCamera {
     	}
     }
 
-//================================================================================
+	/**
+	 * @return fps[int]
+	 */
+	public synchronized int getCurrentFps() {
+		return nativeGetCurrentFps(mNativePtr);
+	}
+
+	//================================================================================
 	public synchronized void updateCameraParams() {
     	if (mNativePtr != 0) {
     		if ((mControlSupports == 0) || (mProcSupports == 0)) {
@@ -1221,4 +1228,6 @@ public class UVCCamera {
 	private final native int nativeUpdatePrivacyLimit(final long id_camera);
     private static final native int nativeSetPrivacy(final long id_camera, final boolean privacy);
     private static final native int nativeGetPrivacy(final long id_camera);
+
+	private static final native int nativeGetCurrentFps(final long id_camera);
 }

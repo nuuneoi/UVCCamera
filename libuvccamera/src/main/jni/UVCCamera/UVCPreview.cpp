@@ -25,6 +25,9 @@
 #include <stdlib.h>
 #include <linux/time.h>
 #include <unistd.h>
+#include <sys/time.h>
+
+using namespace std;
 
 #if 1	// set 1 if you don't need debug log
 	#ifndef LOG_NDEBUG
@@ -77,6 +80,9 @@ UVCPreview::UVCPreview(uvc_device_handle_t *devh)
 	pthread_mutex_init(&capture_mutex, NULL);
 //	
 	pthread_mutex_init(&pool_mutex, NULL);
+
+	fpsCounter = new FpsCounter();
+
 	EXIT();
 }
 
@@ -97,6 +103,10 @@ UVCPreview::~UVCPreview() {
 	pthread_mutex_destroy(&capture_mutex);
 	pthread_cond_destroy(&capture_sync);
 	pthread_mutex_destroy(&pool_mutex);
+	if (fpsCounter) {
+        delete fpsCounter;
+        fpsCounter = NULL;
+	}
 	EXIT();
 }
 
@@ -529,6 +539,8 @@ void UVCPreview::do_preview(uvc_stream_ctrl_t *ctrl) {
 		if (frameMode) {
 			// MJPEG mode
 			for ( ; LIKELY(isRunning()) ; ) {
+    			fpsCounter->onNewFrameAvailable();
+
 				frame_mjpeg = waitPreviewFrame();
 				if (LIKELY(frame_mjpeg)) {
 					frame = get_frame(frame_mjpeg->width * frame_mjpeg->height * 2);
@@ -881,4 +893,12 @@ void UVCPreview::do_capture_callback(JNIEnv *env, uvc_frame_t *frame) {
 		recycle_frame(callback_frame);
 	}
 	EXIT();
+}
+
+int UVCPreview::getCurrentFps() {
+    ENTER();
+    int fps = 0;
+    if (LIKELY(fpsCounter))
+        fps = fpsCounter->getCurrentFps();
+	RETURN(fps, int);
 }
