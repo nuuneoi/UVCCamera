@@ -107,6 +107,7 @@ UVCPreview::~UVCPreview() {
  * and you may need to confirm the size
  */
 uvc_frame_t *UVCPreview::get_frame(size_t data_bytes) {
+	LOGD(">>>> Haha");
 	uvc_frame_t *frame = NULL;
 	pthread_mutex_lock(&pool_mutex);
 	{
@@ -356,9 +357,6 @@ int UVCPreview::stopPreview() {
 		mIsRunning = false;
 		pthread_cond_signal(&preview_sync);
 		pthread_cond_signal(&capture_sync);
-		if (pthread_join(capture_thread, NULL) != EXIT_SUCCESS) {
-			LOGW("UVCPreview::terminate capture thread: pthread_join failed");
-		}
 		if (pthread_join(preview_thread, NULL) != EXIT_SUCCESS) {
 			LOGW("UVCPreview::terminate preview thread: pthread_join failed");
 		}
@@ -517,11 +515,18 @@ void UVCPreview::do_preview(uvc_stream_ctrl_t *ctrl) {
 
 	if (LIKELY(!result)) {
 		clearPreviewFrame();
-		pthread_create(&capture_thread, NULL, capture_thread_func, (void *)this);
+	    clearCaptureFrame();
+	    callbackPixelFormatChanged();
+
+		JavaVM *vm = getVM();
+		JNIEnv *env;
+		// attach to JavaVM
+		vm->AttachCurrentThread(&env, NULL);
 
 #if LOCAL_DEBUG
 		LOGI("Streaming...");
 #endif
+
 		if (frameMode) {
 			// MJPEG mode
 			for ( ; LIKELY(isRunning()) ; ) {
@@ -532,7 +537,8 @@ void UVCPreview::do_preview(uvc_stream_ctrl_t *ctrl) {
 					recycle_frame(frame_mjpeg);
 					if (LIKELY(!result)) {
 						frame = draw_preview_one(frame, &mPreviewWindow, uvc_any2rgbx, 4);
-						addCaptureFrame(frame);
+						do_capture_callback(env, frame);
+						// addCaptureFrame(frame);
 					} else {
 						recycle_frame(frame);
 					}
@@ -544,11 +550,13 @@ void UVCPreview::do_preview(uvc_stream_ctrl_t *ctrl) {
 				frame = waitPreviewFrame();
 				if (LIKELY(frame)) {
 					frame = draw_preview_one(frame, &mPreviewWindow, uvc_any2rgbx, 4);
-					addCaptureFrame(frame);
+					do_capture_callback(env, frame);
+					// addCaptureFrame(frame);
 				}
 			}
 		}
 		pthread_cond_signal(&capture_sync);
+
 #if LOCAL_DEBUG
 		LOGI("preview_thread_func:wait for all callbacks complete");
 #endif
@@ -556,6 +564,9 @@ void UVCPreview::do_preview(uvc_stream_ctrl_t *ctrl) {
 #if LOCAL_DEBUG
 		LOGI("Streaming finished");
 #endif
+
+		// detach from JavaVM
+		vm->DetachCurrentThread();
 	} else {
 		uvc_perror(result, "failed start_streaming");
 	}
